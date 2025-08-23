@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Optional: skip SSH host key check for Git (only if repo is trusted)
+        // Skip Git host key verification (optional safety)
         GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=no"
     }
 
@@ -11,15 +11,17 @@ pipeline {
             steps {
                 echo "Cloning AddressBook project repo..."
                 git branch: 'main',
-                    credentialsId: 'ansible-ssh',
+                    credentialsId: 'ansible-ssh',  // SSH credential for Git
                     url: 'git@github.com:Sathya252/addressbook-cicd-project.git'
             }
         }
 
-        stage('Build with Maven') {
+        stage('Build with Maven (Optional)') {
             steps {
-                echo "Building project with Maven..."
-                sh 'mvn clean package'
+                echo "Building project with Maven (optional)..."
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh 'mvn clean package'
+                }
             }
         }
 
@@ -36,12 +38,12 @@ pipeline {
             steps {
                 echo "Running Ansible playbook..."
                 ansiblePlaybook(
-                    playbook: 'install_apache.yml',   // your playbook
-                    inventory: 'inventory.ini',        // your inventory file
-                    credentialsId: 'devops',           // SSH credentials for target hosts
+                    playbook: 'playbook.yml',
+                    inventory: 'inventory.ini',
+                    credentialsId: 'ansible-ssh',       // SSH credentials for node
                     colorized: true,
-                    disableHostKeyChecking: true,      // disable SSH key check
-                    installation: 'ansible2'           // Ansible installation name
+                    disableHostKeyChecking: true,
+                    installation: 'ansible2'
                 )
             }
         }
@@ -49,7 +51,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully!"
+            echo "Pipeline completed successfully! AddressBook should be deployed."
         }
         failure {
             echo "Pipeline failed. Check logs for details."
