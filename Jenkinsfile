@@ -2,26 +2,24 @@ pipeline {
     agent any
 
     environment {
-        // Skip Git host key checking temporarily
+        // Force Git to skip host key verification temporarily (optional)
         GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=no"
     }
 
     stages {
-
-        stage('Clone AddressBook Project Repo') {
+        stage('Clone Project Repo') {
             steps {
                 echo "Cloning AddressBook project repo..."
                 git branch: 'main',
-                    credentialsId: 'ansible-ssh',   
+                    credentialsId: 'ansible-ssh',   // SSH credential for repo access
                     url: 'git@github.com:Sathya252/addressbook-cicd-project.git'
             }
         }
 
         stage('Build with Maven') {
             steps {
-                // Go into the folder containing the pom.xml
+                echo "Building project with Maven..."
                 dir('addressbook-cicd-project') {
-                    echo "Building project with Maven..."
                     sh 'mvn clean package'
                 }
             }
