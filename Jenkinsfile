@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Force Git to skip host key verification temporarily (optional)
+        // Force Git to skip host key verification temporarily (optional safety)
         GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=no"
     }
 
@@ -11,7 +11,7 @@ pipeline {
             steps {
                 echo "Cloning AddressBook project repo..."
                 git branch: 'main',
-                    credentialsId: 'ansible-ssh',   // SSH credential for repo access
+                    credentialsId: 'ansible-ssh',   // SSH credential you created in Jenkins
                     url: 'git@github.com:Sathya252/addressbook-cicd-project.git'
             }
         }
@@ -19,7 +19,7 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 echo "Building project with Maven..."
-                dir('addressbook-cicd-project') {
+                dir('addressbook-cicd-project') {   // Run Maven in the folder containing pom.xml
                     sh 'mvn clean package'
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
                 ansiblePlaybook(
                     playbook: 'playbook.yml',
                     inventory: 'inventory.ini',
-                    credentialsId: 'ansible-ssh',  // SSH credentials for target hosts
+                    credentialsId: 'ansible-ssh',       // SSH credentials for target hosts
                     colorized: true,
                     disableHostKeyChecking: true,
                     installation: 'ansible2'
