@@ -1,0 +1,63 @@
+---
+- name: Deploy AddressBook App
+  hosts: all
+  become: true
+  vars:
+    tomcat_version: "9.0.108"
+    tomcat_install_dir: "/opt/tomcat"
+    tomcat_zip: "apache-tomcat-{{ tomcat_version }}.zip"
+    war_file: "addressbook.war"
+    tomcat_home: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_version }}"
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - openjdk-17-jdk
+        - unzip
+
+    - name: Download Tomcat ZIP if not exists
+      ansible.builtin.get_url:
+        url: "https://downloads.apache.org/tomcat/tomcat-9/v{{ tomcat_version }}/bin/{{ tomcat_zip }}"
+        dest: "/tmp/{{ tomcat_zip }}"
+      args:
+        creates: "/tmp/{{ tomcat_zip }}"
+
+    - name: Extract Tomcat if not exists
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ tomcat_zip }}"
+        dest: "{{ tomcat_install_dir }}"
+        remote_src: true
+      args:
+        creates: "{{ tomcat_home }}"
+
+    - name: Give execute permission to Tomcat scripts
+      ansible.builtin.file:
+        path: "{{ tomcat_home }}/bin/{{ item }}"
+        mode: '0755'
+      loop:
+        - startup.sh
+        - shutdown.sh
+
+    - name: Copy AddressBook WAR file to Tomcat webapps
+      ansible.builtin.copy:
+        src: "{{ war_file }}"
+        dest: "{{ tomcat_home }}/webapps/{{ war_file }}"
+        owner: devops
+        group: devops
+        mode: '0644'
+
+    - name: Start Tomcat
+      ansible.builtin.shell: "{{ tomcat_home }}/bin/startup.sh"
+      args:
+        executable: /bin/bash
+      notify:
+        - Restart Tomcat
+
+  handlers:
+    - name: Restart Tomcat
+      ansible.builtin.shell: "{{ tomcat_home }}/bin/shutdown.sh && {{ tomcat_home }}/bin/startup.sh"
+      args:
+        executable: /bin/bash
