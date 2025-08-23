@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        // Optional: skip SSH host key check for Git (only if repo is trusted)
         GIT_SSH_COMMAND = "ssh -o StrictHostKeyChecking=no"
     }
 
@@ -35,12 +36,12 @@ pipeline {
             steps {
                 echo "Running Ansible playbook..."
                 ansiblePlaybook(
-                    playbook: 'addressbook.yml',
-                    inventory: 'inventory.ini',
-                    credentialsId: 'ansible-ssh',
+                    playbook: 'install_apache.yml',   // your playbook
+                    inventory: 'inventory.ini',        // your inventory file
+                    credentialsId: 'devops',           // SSH credentials for target hosts
                     colorized: true,
-                    disableHostKeyChecking: true,
-                    installation: 'Ansible'
+                    disableHostKeyChecking: true,      // disable SSH key check
+                    installation: 'ansible2'           // Ansible installation name
                 )
             }
         }
